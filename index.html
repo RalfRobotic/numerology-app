@@ -2,71 +2,393 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Нумерология</title>
-    <!-- Подключаем Telegram Web Apps SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        :root {
+            --bg-color: var(--tg-theme-bg-color, #fff);
+            --text-color: var(--tg-theme-text-color, #000);
+            --hint-color: var(--tg-theme-hint-color, #999);
+            --button-color: var(--tg-theme-button-color, #3390ec);
+            --button-text-color: var(--tg-theme-button-text-color, #fff);
+            --secondary-bg: var(--tg-theme-secondary-bg-color, #f4f4f5);
+        }
+
         body {
-            font-family: sans-serif;
-            background-color: var(--tg-theme-bg-color, #fff);
-            color: var(--tg-theme-text-color, #000);
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            padding-bottom: 80px; /* Место под навбар */
+        }
+
+        /* Табы (Навигация внизу) */
+        .tab-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            background-color: var(--bg-color);
+            border-top: 1px solid var(--hint-color);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--hint-color);
+            font-size: 10px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px;
+            cursor: pointer;
         }
-        input {
+
+        .tab-btn.active {
+            color: var(--button-color);
+        }
+
+        .tab-icon {
+            font-size: 20px;
+            margin-bottom: 2px;
+        }
+
+        /* Контент */
+        .page {
+            display: none;
+            padding: 20px;
+            animation: fadeIn 0.3s;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1, h2 { margin-top: 0; }
+        
+        /* Формы */
+        .input-group {
+            margin-bottom: 20px;
+            background: var(--secondary-bg);
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        label {
+            display: block;
+            font-size: 14px;
+            color: var(--hint-color);
+            margin-bottom: 8px;
+        }
+
+        input[type="date"], input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 18px;
+            border: 1px solid var(--hint-color);
+            border-radius: 8px;
+            background: var(--bg-color);
+            color: var(--text-color);
+            box-sizing: border-box;
+        }
+
+        /* Карточки результатов */
+        .result-card {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .result-number {
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .result-title {
+            text-align: center;
+            opacity: 0.9;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .action-btn {
             width: 100%;
             padding: 15px;
-            margin: 10px 0;
-            border-radius: 10px;
-            border: 1px solid #ccc;
+            background-color: var(--button-color);
+            color: var(--button-text-color);
+            border: none;
+            border-radius: 12px;
             font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 10px;
         }
-        .hint {
-            color: var(--tg-theme-hint-color, #999);
+
+        .calc-details {
             font-size: 12px;
-            margin-bottom: 20px;
+            opacity: 0.8;
+            text-align: center;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
-    <h1>🔢 Расчет судьбы</h1>
-    <p>Введите вашу дату рождения:</p>
-    
-    <input type="date" id="birthdate" />
-    <div class="hint">Мы рассчитаем Число Жизненного Пути</div>
+
+    <!-- СТРАНИЦА 1: ПРОФИЛЬ (Расчет по дате рождения) -->
+    <div id="page-profile" class="page active">
+        <h2>👤 Личный профиль</h2>
+        
+        <div class="input-group">
+            <label>Дата рождения:</label>
+            <input type="date" id="birthdate" onchange="calculateAll()">
+        </div>
+
+        <div class="input-group">
+            <label>ФИО (для числа имени):</label>
+            <input type="text" id="fullname" placeholder="Иванов Иван Иванович" oninput="calculateAll()">
+        </div>
+
+        <!-- Результаты -->
+        <div id="results-container" style="display:none;">
+            <div class="result-card">
+                <div class="result-title">Число Жизненного Пути</div>
+                <div class="result-number" id="life-path-num">-</div>
+                <div class="calc-details" id="life-path-calc"></div>
+            </div>
+
+            <div class="result-card" style="background: linear-gradient(135deg, #ff9966 0%, #ff5e62 100%);">
+                <div class="result-title">Число Души</div>
+                <div class="result-number" id="soul-num">-</div>
+            </div>
+
+            <div class="result-card" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
+                <div class="result-title">Число Имени</div>
+                <div class="result-number" id="name-num">-</div>
+            </div>
+
+            <button class="action-btn" onclick="sendToBot()">🔮 Получить расшифровку от AI</button>
+        </div>
+    </div>
+
+    <!-- СТРАНИЦА 2: КАЛЬКУЛЯТОР (Авто, телефон) -->
+    <div id="page-calc" class="page">
+        <h2>🔢 Калькулятор</h2>
+        <p>Анализ произвольных чисел (телефон, авто, квартира)</p>
+        
+        <div class="input-group">
+            <label>Введите номер или текст:</label>
+            <input type="text" id="arbitrary-input" placeholder="А 777 АА 777" oninput="calculateArbitrary()">
+        </div>
+
+        <div class="result-card" id="arb-result-card" style="display:none; background: var(--button-color);">
+            <div class="result-title">Итог</div>
+            <div class="result-number" id="arb-num">-</div>
+            <div class="calc-details" id="arb-calc"></div>
+        </div>
+        
+        <button class="action-btn" id="arb-btn" style="display:none" onclick="sendArbitraryToBot()">📜 Расшифровать</button>
+    </div>
+
+    <!-- Навигация -->
+    <div class="tab-bar">
+        <button class="tab-btn active" onclick="switchTab('profile', this)">
+            <span class="tab-icon">👤</span>
+            <span>Профиль</span>
+        </button>
+        <button class="tab-btn" onclick="switchTab('calc', this)">
+            <span class="tab-icon">🔢</span>
+            <span>Калькулятор</span>
+        </button>
+    </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Раскрыть на весь экран
+        tg.expand();
 
-        // Настройка главной кнопки
-        tg.MainButton.setText("РАССЧИТАТЬ");
-        tg.MainButton.show();
+        // === ЛОГИКА НУМЕРОЛОГИИ (JavaScript порт вашего Python кода) ===
+        
+        const MASTER_NUMBERS = [11, 22, 33];
+        
+        const ALPHABET = {
+            'А':1, 'И':1, 'С':1, 'Ъ':1, 'A':1, 'J':1, 'S':1,
+            'Б':2, 'Й':2, 'Т':2, 'Ы':2, 'B':2, 'K':2, 'T':2,
+            'В':3, 'К':3, 'У':3, 'Ь':3, 'C':3, 'L':3, 'U':3,
+            'Г':4, 'Л':4, 'Ф':4, 'Э':4, 'D':4, 'M':4, 'V':4,
+            'Д':5, 'М':5, 'Х':5, 'Ю':5, 'E':5, 'N':5, 'W':5,
+            'Е':6, 'Н':6, 'Ц':6, 'Я':6, 'F':6, 'O':6, 'X':6,
+            'Ё':7, 'О':7, 'Ч':7,        'G':7, 'P':7, 'Y':7,
+            'Ж':8, 'П':8, 'Ш':8,        'H':8, 'Q':8, 'Z':8,
+            'З':9, 'Р':9, 'Щ':9,        'I':9, 'R':9
+        };
 
-        // Обработка клика по кнопке
-        tg.MainButton.onClick(function() {
-            const date = document.getElementById('birthdate').value;
-            if (!date) {
-                tg.showAlert("Пожалуйста, выберите дату!");
-                return;
+        // Функция редукции числа (как в Python reduce_to_single_digit)
+        function reduceToSingle(num) {
+            let n = parseInt(num);
+            while (n > 9) {
+                if (MASTER_NUMBERS.includes(n)) return n;
+                n = String(n).split('').reduce((a, b) => parseInt(a) + parseInt(b), 0);
+            }
+            return n;
+        }
+
+        // Расчет Жизненного Пути
+        function calculateLifePathNum(dateString) {
+            // dateString format YYYY-MM-DD
+            const [year, month, day] = dateString.split('-');
+            
+            const sumDigits = (str) => str.split('').reduce((a, b) => parseInt(a) + parseInt(b), 0);
+            
+            const daySum = sumDigits(day);
+            const monthSum = sumDigits(month);
+            const yearSum = sumDigits(year);
+            
+            const total = daySum + monthSum + yearSum;
+            return {
+                result: reduceToSingle(total),
+                calc: `${daySum} + ${monthSum} + ${yearSum} = ${total}`
+            };
+        }
+
+        // Расчет числа Имени
+        function calculateNameNum(text) {
+            let sum = 0;
+            const cleanText = text.toUpperCase();
+            
+            for (let char of cleanText) {
+                if (ALPHABET[char]) sum += ALPHABET[char];
             }
             
-            // Преобразуем формат YYYY-MM-DD в DD.MM.YYYY (как ожидает ваш бот)
-            const [year, month, day] = date.split('-');
-            const formattedDate = `${day}.${month}.${year}`;
-
-            // Создаем объект данных для отправки
-            const data = {
-                action: 'life_path', // Говорим боту, что делать
-                date: formattedDate
+            return {
+                result: reduceToSingle(sum),
+                total: sum
             };
+        }
 
-            // Отправляем данные боту (как строку JSON)
+        // Расчет произвольного числа (просто сумма цифр)
+        function calculateArbitraryNum(text) {
+            // Оставляем только цифры
+            const digits = text.replace(/\D/g, '');
+            if (!digits) return null;
+            
+            let sum = 0;
+            let formula = [];
+            for (let d of digits) {
+                sum += parseInt(d);
+                formula.push(d);
+            }
+            
+            return {
+                result: reduceToSingle(sum),
+                calc: `${formula.join('+')} = ${sum}`
+            };
+        }
+
+        // === УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ ===
+
+        function switchTab(tabName, btn) {
+            document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            document.getElementById('page-' + tabName).classList.add('active');
+            btn.classList.add('active');
+        }
+
+        function calculateAll() {
+            const dateVal = document.getElementById('birthdate').value;
+            const nameVal = document.getElementById('fullname').value;
+            
+            if (!dateVal) return;
+
+            // Считаем Путь
+            const lp = calculateLifePathNum(dateVal);
+            document.getElementById('life-path-num').innerText = lp.result;
+            document.getElementById('life-path-calc').innerText = lp.calc;
+            
+            // Считаем Душу (День рождения)
+            const day = dateVal.split('-')[2];
+            const soul = reduceToSingle(day);
+            document.getElementById('soul-num').innerText = soul;
+
+            // Считаем Имя
+            if (nameVal) {
+                const nn = calculateNameNum(nameVal);
+                document.getElementById('name-num').innerText = nn.result;
+            } else {
+                document.getElementById('name-num').innerText = "-";
+            }
+
+            document.getElementById('results-container').style.display = 'block';
+        }
+
+        function calculateArbitrary() {
+            const val = document.getElementById('arbitrary-input').value;
+            const res = calculateArbitraryNum(val);
+            
+            const card = document.getElementById('arb-result-card');
+            const btn = document.getElementById('arb-btn');
+            
+            if (res) {
+                document.getElementById('arb-num').innerText = res.result;
+                document.getElementById('arb-calc').innerText = res.calc;
+                card.style.display = 'block';
+                btn.style.display = 'block';
+            } else {
+                card.style.display = 'none';
+                btn.style.display = 'none';
+            }
+        }
+
+        // === ОТПРАВКА В БОТА ===
+
+        function sendToBot() {
+            const dateVal = document.getElementById('birthdate').value;
+            const nameVal = document.getElementById('fullname').value;
+            
+            if (!dateVal) return;
+            
+            // Преобразуем дату в DD.MM.YYYY
+            const [y, m, d] = dateVal.split('-');
+            const formattedDate = `${d}.${m}.${y}`;
+
+            const data = {
+                action: 'full_analysis', // Говорим боту сделать полный анализ
+                date: formattedDate,
+                name: nameVal
+            };
+            
             tg.sendData(JSON.stringify(data));
-        });
+        }
+
+        function sendArbitraryToBot() {
+            const val = document.getElementById('arbitrary-input').value;
+            
+            const data = {
+                action: 'any_number',
+                number: val
+            };
+            
+            tg.sendData(JSON.stringify(data));
+        }
+
+        // Инициализация
+        tg.ready();
     </script>
 </body>
 </html>
