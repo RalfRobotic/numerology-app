@@ -619,35 +619,87 @@
         // ==========================================
 
         function sendAction(actionType) {
-            tg.showAlert("Пытаюсь отправить данные: " + actionType); 
-            let data = { action: actionType };
+            try {
+                // 1. Проверяем, загрузился ли SDK
+                if (!window.Telegram || !window.Telegram.WebApp) {
+                    alert("Ошибка: Telegram WebApp SDK не найден!");
+                    return;
+                }
 
-            if (actionType === 'full_analysis') {
-                const dateVal = document.getElementById('birthdate').value;
-                if (!dateVal) return tg.showAlert("Введите дату рождения!");
-                
-                // Форматируем в DD.MM.YYYY
-                const [y, m, d] = dateVal.split('-');
-                data.date = `${d}.${m}.${y}`;
-                data.name = document.getElementById('fullname').value || "";
-            } 
-            else if (actionType === 'any_number') {
-                const val = document.getElementById('arbitrary-input').value;
-                if (!val) return tg.showAlert("Введите номер!");
-                
-                data.number = val;
-                data.type = document.getElementById('num-type').value;
-            }
-            else if (actionType === 'event_date') {
-                const dateVal = document.getElementById('event-date').value;
-                if (!dateVal) return tg.showAlert("Выберите дату!");
-                
-                const [y, m, d] = dateVal.split('-');
-                data.date = `${d}.${m}.${y}`;
-                data.event_type = document.getElementById('event-type').value;
-            }
+                // 2. Проверяем, поддерживает ли метод отправки
+                // sendData доступен только если initData не пустая (открыто из Telegram)
+                if (!tg.initData) {
+                    tg.showAlert("Ошибка: Откройте приложение через кнопку Меню в боте, а не по прямой ссылке!");
+                    return;
+                }
 
-            tg.sendData(JSON.stringify(data));
+                let data = { action: actionType };
+
+                // === Логика сбора данных ===
+                if (actionType === 'full_analysis') {
+                    const dateEl = document.getElementById('birthdate');
+                    const nameEl = document.getElementById('fullname');
+
+                    // Проверяем, существуют ли элементы в HTML
+                    if (!dateEl || !nameEl) {
+                        tg.showAlert("Ошибка HTML: Поля ввода не найдены (ID mismatch)");
+                        return;
+                    }
+
+                    const dateVal = dateEl.value;
+                    if (!dateVal) {
+                        tg.showAlert("Пожалуйста, выберите дату рождения!");
+                        return;
+                    }
+                    
+                    const [y, m, d] = dateVal.split('-');
+                    data.date = `${d}.${m}.${y}`;
+                    data.name = nameEl.value || "";
+                } 
+                else if (actionType === 'any_number') {
+                    const inputEl = document.getElementById('arbitrary-input');
+                    const typeEl = document.getElementById('num-type');
+                    
+                    if (!inputEl) {
+                        tg.showAlert("Ошибка HTML: Поле ввода номера не найдено");
+                        return;
+                    }
+
+                    const val = inputEl.value;
+                    if (!val) {
+                        tg.showAlert("Пожалуйста, введите номер!");
+                        return;
+                    }
+                    
+                    data.number = val;
+                    data.type = typeEl.value;
+                }
+                else if (actionType === 'event_date') {
+                    const dateEl = document.getElementById('event-date');
+                    if (!dateEl) {
+                        tg.showAlert("Ошибка HTML: Поле даты события не найдено");
+                        return;
+                    }
+                    
+                    const dateVal = dateEl.value;
+                    if (!dateVal) {
+                        tg.showAlert("Пожалуйста, выберите дату события!");
+                        return;
+                    }
+                    
+                    const [y, m, d] = dateVal.split('-');
+                    data.date = `${d}.${m}.${y}`;
+                    data.event_type = document.getElementById('event-type').value;
+                }
+
+                // 3. Если дошли сюда - пытаемся отправить
+                // alert("Отправка данных: " + JSON.stringify(data)); // Раскомментируйте для отладки
+                tg.sendData(JSON.stringify(data));
+
+            } catch (e) {
+                // Если произошла любая программная ошибка, покажем её
+                alert("CRITICAL ERROR: " + e.message);
+            }
         }
 
         // Инициализация
