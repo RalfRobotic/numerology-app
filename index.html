@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Нумерология</title>
+    <title>Нумерология Pro</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -13,6 +13,8 @@
             --button-color: var(--tg-theme-button-color, #3390ec);
             --button-text-color: var(--tg-theme-button-text-color, #fff);
             --secondary-bg: var(--tg-theme-secondary-bg-color, #f4f4f5);
+            --card-bg: var(--tg-theme-section-bg-color, #ffffff);
+            --header-bg: var(--tg-theme-header-bg-color, #f0f0f0);
         }
 
         body {
@@ -21,22 +23,23 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-color);
-            padding-bottom: 80px; /* Место под навбар */
+            padding-bottom: 90px;
         }
 
-        /* Табы (Навигация внизу) */
+        /* Навигация (Табы) */
         .tab-bar {
             position: fixed;
             bottom: 0;
             left: 0;
             width: 100%;
             height: 60px;
-            background-color: var(--bg-color);
+            background-color: var(--secondary-bg);
             border-top: 1px solid var(--hint-color);
             display: flex;
             justify-content: space-around;
             align-items: center;
             z-index: 100;
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
         .tab-btn {
@@ -48,6 +51,7 @@
             flex-direction: column;
             align-items: center;
             cursor: pointer;
+            width: 25%;
         }
 
         .tab-btn.active {
@@ -62,7 +66,7 @@
         /* Контент */
         .page {
             display: none;
-            padding: 20px;
+            padding: 16px;
             animation: fadeIn 0.3s;
         }
 
@@ -71,66 +75,98 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
-        h1, h2 { margin-top: 0; }
-        
-        /* Формы */
+        h2 { margin-top: 10px; margin-bottom: 20px; font-size: 22px; }
+        h3 { font-size: 18px; margin: 15px 0 10px; }
+
         .input-group {
-            margin-bottom: 20px;
-            background: var(--secondary-bg);
-            padding: 15px;
-            border-radius: 12px;
+            margin-bottom: 15px;
         }
 
         label {
             display: block;
-            font-size: 14px;
+            font-size: 13px;
             color: var(--hint-color);
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
-        input[type="date"], input[type="text"] {
+        input, select {
             width: 100%;
-            padding: 10px;
-            font-size: 18px;
-            border: 1px solid var(--hint-color);
-            border-radius: 8px;
-            background: var(--bg-color);
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            background: var(--card-bg);
             color: var(--text-color);
             box-sizing: border-box;
-        }
-
-        /* Карточки результатов */
-        .result-card {
-            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            outline: none;
         }
         
-        .result-number {
-            font-size: 48px;
-            font-weight: bold;
-            text-align: center;
-            margin: 10px 0;
+        input:focus { border-color: var(--button-color); }
+
+        /* Карточки результатов */
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
         }
 
-        .result-title {
-            text-align: center;
-            opacity: 0.9;
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .action-btn {
-            width: 100%;
+        .result-card {
+            background: var(--secondary-bg);
             padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            position: relative;
+            border: 1px solid transparent;
+        }
+
+        .result-card.highlight {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            color: white;
+        }
+        
+        .result-card.highlight .label { color: rgba(255,255,255,0.8); }
+        .result-card.highlight .calc { color: rgba(255,255,255,0.7); }
+
+        .result-num {
+            font-size: 32px;
+            font-weight: 700;
+            margin: 5px 0;
+        }
+
+        .result-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--hint-color);
+        }
+
+        .result-calc {
+            font-size: 10px;
+            color: var(--hint-color);
+            margin-top: 4px;
+        }
+        
+        /* Метки Мастер/Карма */
+        .badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .badge-master { background: #ffd700; color: #000; }
+        .badge-karmic { background: #ff4757; color: #fff; }
+
+        .main-btn {
+            width: 100%;
+            padding: 16px;
             background-color: var(--button-color);
             color: var(--button-text-color);
             border: none;
@@ -138,83 +174,161 @@
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
-            margin-top: 10px;
+            margin-top: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transition: transform 0.1s;
         }
+        
+        .main-btn:active { transform: scale(0.98); }
 
-        .calc-details {
-            font-size: 12px;
-            opacity: 0.8;
-            text-align: center;
-            margin-top: 5px;
+        .details-box {
+            background: var(--secondary-bg);
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 13px;
         }
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            padding-bottom: 5px;
+        }
+        .detail-row:last-child { border: none; margin: 0; padding: 0; }
     </style>
 </head>
 <body>
 
-    <!-- СТРАНИЦА 1: ПРОФИЛЬ (Расчет по дате рождения) -->
-    <div id="page-profile" class="page active">
-        <h2>👤 Личный профиль</h2>
+    <!-- СТРАНИЦА 1: ЛИЧНОСТЬ (Life Path, Soul, Name, Personal Year) -->
+    <div id="page-personal" class="page active">
+        <h2>👤 Личный портрет</h2>
         
         <div class="input-group">
-            <label>Дата рождения:</label>
-            <input type="date" id="birthdate" onchange="calculateAll()">
+            <label>Дата рождения</label>
+            <input type="date" id="birthdate" onchange="calcPersonal()">
         </div>
 
         <div class="input-group">
-            <label>ФИО (для числа имени):</label>
-            <input type="text" id="fullname" placeholder="Иванов Иван Иванович" oninput="calculateAll()">
+            <label>Полное имя (ФИО)</label>
+            <input type="text" id="fullname" placeholder="Иванов Иван Иванович" oninput="calcPersonal()">
         </div>
 
-        <!-- Результаты -->
-        <div id="results-container" style="display:none;">
-            <div class="result-card">
-                <div class="result-title">Число Жизненного Пути</div>
-                <div class="result-number" id="life-path-num">-</div>
-                <div class="calc-details" id="life-path-calc"></div>
+        <div id="personal-results" style="display:none;">
+            <!-- Основной грид -->
+            <div class="result-grid">
+                <!-- Жизненный путь -->
+                <div class="result-card highlight">
+                    <div class="result-label">Путь (Судьба)</div>
+                    <div class="result-num" id="lp-num">-</div>
+                    <div class="result-calc" id="lp-calc"></div>
+                    <div id="lp-badge"></div>
+                </div>
+
+                <!-- Персональный год -->
+                <div class="result-card">
+                    <div class="result-label">Личный год</div>
+                    <div class="result-num" id="py-num">-</div>
+                    <div class="result-calc" id="py-year"></div>
+                    <div id="py-badge"></div>
+                </div>
             </div>
 
-            <div class="result-card" style="background: linear-gradient(135deg, #ff9966 0%, #ff5e62 100%);">
-                <div class="result-title">Число Души</div>
-                <div class="result-number" id="soul-num">-</div>
+            <div class="result-grid">
+                <!-- Душа -->
+                <div class="result-card">
+                    <div class="result-label">Число Души</div>
+                    <div class="result-num" id="soul-num">-</div>
+                    <div id="soul-badge"></div>
+                </div>
+
+                <!-- Имя -->
+                <div class="result-card">
+                    <div class="result-label">Число Имени</div>
+                    <div class="result-num" id="name-num">-</div>
+                    <div id="name-badge"></div>
+                </div>
             </div>
 
-            <div class="result-card" style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);">
-                <div class="result-title">Число Имени</div>
-                <div class="result-number" id="name-num">-</div>
-            </div>
-
-            <button class="action-btn" onclick="sendToBot()">🔮 Получить расшифровку от AI</button>
+            <button class="main-btn" onclick="sendAction('full_analysis')">🔮 Полная расшифровка</button>
         </div>
     </div>
 
-    <!-- СТРАНИЦА 2: КАЛЬКУЛЯТОР (Авто, телефон) -->
-    <div id="page-calc" class="page">
-        <h2>🔢 Калькулятор</h2>
-        <p>Анализ произвольных чисел (телефон, авто, квартира)</p>
+    <!-- СТРАНИЦА 2: АВТО/ТЕЛЕФОН (Сложный анализ) -->
+    <div id="page-numbers" class="page">
+        <h2>🔢 Анализ номера</h2>
         
         <div class="input-group">
-            <label>Введите номер или текст:</label>
-            <input type="text" id="arbitrary-input" placeholder="А 777 АА 777" oninput="calculateArbitrary()">
+            <label>Тип номера</label>
+            <select id="num-type" onchange="uiUpdateNumType()">
+                <option value="any">Произвольное число</option>
+                <option value="car">🚗 Автомобиль</option>
+                <option value="phone">📱 Телефон</option>
+                <option value="apartment">🏠 Квартира/Дом</option>
+            </select>
         </div>
 
-        <div class="result-card" id="arb-result-card" style="display:none; background: var(--button-color);">
-            <div class="result-title">Итог</div>
-            <div class="result-number" id="arb-num">-</div>
-            <div class="calc-details" id="arb-calc"></div>
+        <div class="input-group">
+            <label id="num-label">Введите число</label>
+            <input type="text" id="arbitrary-input" placeholder="Например: 777" oninput="calcArbitrary()">
+        </div>
+
+        <div id="arb-result" style="display:none;">
+            <div class="result-card highlight">
+                <div class="result-label">Итоговая энергия</div>
+                <div class="result-num" id="arb-total">-</div>
+                <div class="result-calc" id="arb-calc"></div>
+                <div id="arb-badge"></div>
+            </div>
+
+            <!-- Детальный анализ для авто/телефона -->
+            <div id="arb-details" class="details-box" style="display:none;">
+                <div class="result-label" style="text-align:center; margin-bottom:10px;">Детализация</div>
+                <div id="arb-details-content"></div>
+            </div>
+
+            <button class="main-btn" onclick="sendAction('any_number')">📜 Расшифровать значение</button>
+        </div>
+    </div>
+
+    <!-- СТРАНИЦА 3: СОБЫТИЯ -->
+    <div id="page-events" class="page">
+        <h2>📅 Даты событий</h2>
+        <div class="input-group">
+            <label>Тип события</label>
+            <select id="event-type">
+                <option value="wedding">💒 Свадьба</option>
+                <option value="business">💼 Бизнес</option>
+                <option value="moving">🏡 Переезд</option>
+                <option value="contract">📝 Подписание документов</option>
+            </select>
         </div>
         
-        <button class="action-btn" id="arb-btn" style="display:none" onclick="sendArbitraryToBot()">📜 Расшифровать</button>
+        <div class="input-group">
+            <label>Дата события</label>
+            <input type="date" id="event-date" onchange="calcEvent()">
+        </div>
+
+        <div id="event-result" style="display:none;">
+            <div class="result-card highlight" style="background: linear-gradient(135deg, #ff9966 0%, #ff5e62 100%);">
+                <div class="result-label">Число события</div>
+                <div class="result-num" id="event-num">-</div>
+                <div class="result-calc" id="event-calc"></div>
+            </div>
+            <button class="main-btn" onclick="sendAction('event_date')">🌟 Прогноз на дату</button>
+        </div>
     </div>
 
     <!-- Навигация -->
     <div class="tab-bar">
-        <button class="tab-btn active" onclick="switchTab('profile', this)">
-            <span class="tab-icon">👤</span>
-            <span>Профиль</span>
+        <button class="tab-btn active" onclick="switchTab('personal', this)">
+            <span class="tab-icon">👤</span>Профиль
         </button>
-        <button class="tab-btn" onclick="switchTab('calc', this)">
-            <span class="tab-icon">🔢</span>
-            <span>Калькулятор</span>
+        <button class="tab-btn" onclick="switchTab('numbers', this)">
+            <span class="tab-icon">🔢</span>Номера
+        </button>
+        <button class="tab-btn" onclick="switchTab('events', this)">
+            <span class="tab-icon">📅</span>События
         </button>
     </div>
 
@@ -222,23 +336,40 @@
         const tg = window.Telegram.WebApp;
         tg.expand();
 
-        // === ЛОГИКА НУМЕРОЛОГИИ (JavaScript порт вашего Python кода) ===
-        
+        // ==========================================
+        // ЛОГИКА НУМЕРОЛОГИИ (1 в 1 с Python)
+        // ==========================================
+
         const MASTER_NUMBERS = [11, 22, 33];
+        const KARMIC_NUMBERS = [13, 14, 16, 19];
+
+        const RUSSIAN_ALPHABET = {
+            'А': 1, 'И': 1, 'С': 1, 'Ъ': 1,
+            'Б': 2, 'Й': 2, 'Т': 2, 'Ы': 2,
+            'В': 3, 'К': 3, 'У': 3, 'Ь': 3,
+            'Г': 4, 'Л': 4, 'Ф': 4, 'Э': 4,
+            'Д': 5, 'М': 5, 'Х': 5, 'Ю': 5,
+            'Е': 6, 'Н': 6, 'Ц': 6, 'Я': 6,
+            'Ё': 7, 'О': 7, 'Ч': 7,
+            'Ж': 8, 'П': 8, 'Ш': 8,
+            'З': 9, 'Р': 9, 'Щ': 9
+        };
         
-        const ALPHABET = {
-            'А':1, 'И':1, 'С':1, 'Ъ':1, 'A':1, 'J':1, 'S':1,
-            'Б':2, 'Й':2, 'Т':2, 'Ы':2, 'B':2, 'K':2, 'T':2,
-            'В':3, 'К':3, 'У':3, 'Ь':3, 'C':3, 'L':3, 'U':3,
-            'Г':4, 'Л':4, 'Ф':4, 'Э':4, 'D':4, 'M':4, 'V':4,
-            'Д':5, 'М':5, 'Х':5, 'Ю':5, 'E':5, 'N':5, 'W':5,
-            'Е':6, 'Н':6, 'Ц':6, 'Я':6, 'F':6, 'O':6, 'X':6,
-            'Ё':7, 'О':7, 'Ч':7,        'G':7, 'P':7, 'Y':7,
-            'Ж':8, 'П':8, 'Ш':8,        'H':8, 'Q':8, 'Z':8,
-            'З':9, 'Р':9, 'Щ':9,        'I':9, 'R':9
+        const ENGLISH_ALPHABET = {
+            'A': 1, 'J': 1, 'S': 1,
+            'B': 2, 'K': 2, 'T': 2,
+            'C': 3, 'L': 3, 'U': 3,
+            'D': 4, 'M': 4, 'V': 4,
+            'E': 5, 'N': 5, 'W': 5,
+            'F': 6, 'O': 6, 'X': 6,
+            'G': 7, 'P': 7, 'Y': 7,
+            'H': 8, 'Q': 8, 'Z': 8,
+            'I': 9, 'R': 9
         };
 
-        // Функция редукции числа (как в Python reduce_to_single_digit)
+        // --- Утилиты ---
+
+        // Редукция с учетом Мастер-чисел
         function reduceToSingle(num) {
             let n = parseInt(num);
             while (n > 9) {
@@ -248,142 +379,273 @@
             return n;
         }
 
-        // Расчет Жизненного Пути
-        function calculateLifePathNum(dateString) {
-            // dateString format YYYY-MM-DD
-            const [year, month, day] = dateString.split('-');
+        // Подсчет суммы цифр
+        function sumDigits(str) {
+            return String(str).replace(/\D/g, '').split('').reduce((a, b) => parseInt(a) + parseInt(b), 0);
+        }
+
+        // Проверка на карму
+        function checkKarma(num) {
+            return KARMIC_NUMBERS.includes(num);
+        }
+
+        // --- Основные расчеты ---
+
+        function calculateLifePath(dateStr) {
+            // YYYY-MM-DD
+            const [year, month, day] = dateStr.split('-');
+            const dSum = sumDigits(day);
+            const mSum = sumDigits(month);
+            const ySum = sumDigits(year);
+            const total = dSum + mSum + ySum;
             
-            const sumDigits = (str) => str.split('').reduce((a, b) => parseInt(a) + parseInt(b), 0);
-            
-            const daySum = sumDigits(day);
-            const monthSum = sumDigits(month);
-            const yearSum = sumDigits(year);
-            
-            const total = daySum + monthSum + yearSum;
             return {
-                result: reduceToSingle(total),
-                calc: `${daySum} + ${monthSum} + ${yearSum} = ${total}`
+                number: reduceToSingle(total),
+                calc: `${dSum} + ${mSum} + ${ySum} = ${total}`,
+                karmic: checkKarma(total)
             };
         }
 
-        // Расчет числа Имени
-        function calculateNameNum(text) {
-            let sum = 0;
-            const cleanText = text.toUpperCase();
+        function calculateName(fullName) {
+            let total = 0;
+            const cleanName = fullName.toUpperCase().replace(/[^А-ЯЁA-Z]/g, '');
             
-            for (let char of cleanText) {
-                if (ALPHABET[char]) sum += ALPHABET[char];
+            for (let char of cleanName) {
+                if (RUSSIAN_ALPHABET[char]) total += RUSSIAN_ALPHABET[char];
+                else if (ENGLISH_ALPHABET[char]) total += ENGLISH_ALPHABET[char];
             }
-            
+
             return {
-                result: reduceToSingle(sum),
-                total: sum
+                number: reduceToSingle(total),
+                karmic: checkKarma(total)
             };
         }
 
-        // Расчет произвольного числа (просто сумма цифр)
-        function calculateArbitraryNum(text) {
-            // Оставляем только цифры
-            const digits = text.replace(/\D/g, '');
-            if (!digits) return null;
+        function calculatePersonalYear(dateStr) {
+            const [_, month, day] = dateStr.split('-');
+            const currentYear = new Date().getFullYear();
             
-            let sum = 0;
-            let formula = [];
-            for (let d of digits) {
-                sum += parseInt(d);
-                formula.push(d);
+            // День + Месяц + Текущий Год
+            const total = parseInt(day) + parseInt(month) + sumDigits(currentYear);
+            
+            return {
+                number: reduceToSingle(total),
+                year: currentYear
+            };
+        }
+
+        // Сложный расчет для авто/телефона (из Python _detailed_number_analysis)
+        function analyzeDetailed(input, type) {
+            const digitsOnly = input.replace(/\D/g, '');
+            if (!digitsOnly) return null;
+
+            // Базовый расчет
+            const totalSum = sumDigits(digitsOnly);
+            const result = {
+                total: reduceToSingle(totalSum),
+                calc: [...digitsOnly].join('+') + ` = ${totalSum}`,
+                parts: []
+            };
+
+            // Детализация
+            if (type === 'car') {
+                // Ищем группы цифр (например А 123 ВВ 77)
+                const groups = input.match(/\d+/g);
+                if (groups && groups.length >= 2) {
+                    const main = groups[0]; // Номер
+                    const region = groups[groups.length - 1]; // Регион
+
+                    const mainSum = sumDigits(main);
+                    const regSum = sumDigits(region);
+
+                    result.parts.push({ name: 'Номер', val: main, res: reduceToSingle(mainSum) });
+                    result.parts.push({ name: 'Регион', val: region, res: reduceToSingle(regSum) });
+                }
+            } else if (type === 'phone') {
+                // Если номер длинный (>10 цифр)
+                if (digitsOnly.length >= 10) {
+                    const mainPart = digitsOnly.slice(-7); // Последние 7
+                    const codePart = digitsOnly.slice(digitsOnly.length - 10, digitsOnly.length - 7); // Код
+
+                    const mainSum = sumDigits(mainPart);
+                    const codeSum = sumDigits(codePart);
+
+                    result.parts.push({ name: 'Тело номера', val: `...${mainPart}`, res: reduceToSingle(mainSum) });
+                    result.parts.push({ name: 'Код оператора', val: codePart, res: reduceToSingle(codeSum) });
+                }
             }
-            
-            return {
-                result: reduceToSingle(sum),
-                calc: `${formula.join('+')} = ${sum}`
-            };
+
+            return result;
         }
 
-        // === УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ ===
+        // ==========================================
+        // UI FUNCTIONS
+        // ==========================================
 
-        function switchTab(tabName, btn) {
-            document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-            
-            document.getElementById('page-' + tabName).classList.add('active');
+        function switchTab(name, btn) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('page-' + name).classList.add('active');
             btn.classList.add('active');
         }
 
-        function calculateAll() {
-            const dateVal = document.getElementById('birthdate').value;
-            const nameVal = document.getElementById('fullname').value;
+        // Рендер бейджей (Мастер/Карма)
+        function renderBadges(containerId, num, isKarmic) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
             
-            if (!dateVal) return;
-
-            // Считаем Путь
-            const lp = calculateLifePathNum(dateVal);
-            document.getElementById('life-path-num').innerText = lp.result;
-            document.getElementById('life-path-calc').innerText = lp.calc;
-            
-            // Считаем Душу (День рождения)
-            const day = dateVal.split('-')[2];
-            const soul = reduceToSingle(day);
-            document.getElementById('soul-num').innerText = soul;
-
-            // Считаем Имя
-            if (nameVal) {
-                const nn = calculateNameNum(nameVal);
-                document.getElementById('name-num').innerText = nn.result;
-            } else {
-                document.getElementById('name-num').innerText = "-";
+            if (MASTER_NUMBERS.includes(num)) {
+                container.innerHTML += '<span class="badge badge-master">MASTER</span>';
             }
-
-            document.getElementById('results-container').style.display = 'block';
+            if (isKarmic) {
+                container.innerHTML += '<span class="badge badge-karmic">KARMA</span>';
+            }
         }
 
-        function calculateArbitrary() {
+        // Калькулятор Личности
+        function calcPersonal() {
+            const dateVal = document.getElementById('birthdate').value;
+            const nameVal = document.getElementById('fullname').value;
+            const resDiv = document.getElementById('personal-results');
+
+            if (!dateVal) {
+                resDiv.style.display = 'none';
+                return;
+            }
+
+            // 1. Life Path
+            const lp = calculateLifePath(dateVal);
+            document.getElementById('lp-num').innerText = lp.number;
+            document.getElementById('lp-calc').innerText = lp.calc;
+            renderBadges('lp-badge', lp.number, lp.karmic);
+
+            // 2. Soul (Day)
+            const day = parseInt(dateVal.split('-')[2]);
+            const soulNum = reduceToSingle(day);
+            document.getElementById('soul-num').innerText = soulNum;
+            renderBadges('soul-badge', soulNum, false);
+
+            // 3. Personal Year
+            const py = calculatePersonalYear(dateVal);
+            document.getElementById('py-num').innerText = py.number;
+            document.getElementById('py-year').innerText = `Год: ${py.year}`;
+            renderBadges('py-badge', py.number, false);
+
+            // 4. Name
+            if (nameVal.length > 2) {
+                const nn = calculateName(nameVal);
+                document.getElementById('name-num').innerText = nn.number;
+                renderBadges('name-badge', nn.number, nn.karmic);
+            } else {
+                document.getElementById('name-num').innerText = '-';
+            }
+
+            resDiv.style.display = 'block';
+        }
+
+        // Калькулятор Номеров
+        function uiUpdateNumType() {
+            const type = document.getElementById('num-type').value;
+            const input = document.getElementById('arbitrary-input');
+            const label = document.getElementById('num-label');
+            
+            input.value = '';
+            document.getElementById('arb-result').style.display = 'none';
+
+            if (type === 'car') {
+                label.innerText = 'Номер (например: А 777 АА 77)';
+            } else if (type === 'phone') {
+                label.innerText = 'Телефон (без +7/8)';
+            } else {
+                label.innerText = 'Любое число';
+            }
+        }
+
+        function calcArbitrary() {
             const val = document.getElementById('arbitrary-input').value;
-            const res = calculateArbitraryNum(val);
+            const type = document.getElementById('num-type').value;
             
-            const card = document.getElementById('arb-result-card');
-            const btn = document.getElementById('arb-btn');
-            
-            if (res) {
-                document.getElementById('arb-num').innerText = res.result;
-                document.getElementById('arb-calc').innerText = res.calc;
-                card.style.display = 'block';
-                btn.style.display = 'block';
-            } else {
-                card.style.display = 'none';
-                btn.style.display = 'none';
+            if (!val) {
+                document.getElementById('arb-result').style.display = 'none';
+                return;
             }
+
+            const res = analyzeDetailed(val, type);
+            if (!res) return;
+
+            document.getElementById('arb-total').innerText = res.total;
+            document.getElementById('arb-calc').innerText = res.calc;
+            renderBadges('arb-badge', res.total, false);
+
+            // Детализация
+            const detailsDiv = document.getElementById('arb-details');
+            const contentDiv = document.getElementById('arb-details-content');
+            
+            if (res.parts.length > 0) {
+                detailsDiv.style.display = 'block';
+                contentDiv.innerHTML = res.parts.map(p => `
+                    <div class="detail-row">
+                        <span>${p.name} (${p.val}):</span>
+                        <strong>${p.res}</strong>
+                    </div>
+                `).join('');
+            } else {
+                detailsDiv.style.display = 'none';
+            }
+
+            document.getElementById('arb-result').style.display = 'block';
         }
 
-        // === ОТПРАВКА В БОТА ===
-
-        function sendToBot() {
-            const dateVal = document.getElementById('birthdate').value;
-            const nameVal = document.getElementById('fullname').value;
+        // Калькулятор Событий
+        function calcEvent() {
+            const dateVal = document.getElementById('event-date').value;
+            if (!dateVal) {
+                document.getElementById('event-result').style.display = 'none';
+                return;
+            }
             
-            if (!dateVal) return;
-            
-            // Преобразуем дату в DD.MM.YYYY
+            // Используем ту же логику что для Life Path, но без кармических проверок
             const [y, m, d] = dateVal.split('-');
-            const formattedDate = `${d}.${m}.${y}`;
+            const total = sumDigits(y) + sumDigits(m) + sumDigits(d);
+            const num = reduceToSingle(total);
 
-            const data = {
-                action: 'full_analysis', // Говорим боту сделать полный анализ
-                date: formattedDate,
-                name: nameVal
-            };
-            
-            tg.sendData(JSON.stringify(data));
+            document.getElementById('event-num').innerText = num;
+            document.getElementById('event-calc').innerText = `${sumDigits(d)} + ${sumDigits(m)} + ${sumDigits(y)}`;
+            document.getElementById('event-result').style.display = 'block';
         }
 
-        function sendArbitraryToBot() {
-            const val = document.getElementById('arbitrary-input').value;
-            
-            const data = {
-                action: 'any_number',
-                number: val
-            };
-            
+        // ==========================================
+        // ОТПРАВКА ДАННЫХ В БОТА
+        // ==========================================
+
+        function sendAction(actionType) {
+            let data = { action: actionType };
+
+            if (actionType === 'full_analysis') {
+                const dateVal = document.getElementById('birthdate').value;
+                if (!dateVal) return tg.showAlert("Введите дату рождения!");
+                
+                // Форматируем в DD.MM.YYYY
+                const [y, m, d] = dateVal.split('-');
+                data.date = `${d}.${m}.${y}`;
+                data.name = document.getElementById('fullname').value || "";
+            } 
+            else if (actionType === 'any_number') {
+                const val = document.getElementById('arbitrary-input').value;
+                if (!val) return tg.showAlert("Введите номер!");
+                
+                data.number = val;
+                data.type = document.getElementById('num-type').value;
+            }
+            else if (actionType === 'event_date') {
+                const dateVal = document.getElementById('event-date').value;
+                if (!dateVal) return tg.showAlert("Выберите дату!");
+                
+                const [y, m, d] = dateVal.split('-');
+                data.date = `${d}.${m}.${y}`;
+                data.event_type = document.getElementById('event-type').value;
+            }
+
             tg.sendData(JSON.stringify(data));
         }
 
