@@ -619,6 +619,7 @@
         // ==========================================
 
         function sendAction(actionType) {
+            tg.showAlert("Пытаюсь отправить данные: " + actionType); 
             let data = { action: actionType };
 
             if (actionType === 'full_analysis') {
