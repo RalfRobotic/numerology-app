@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Нумерология</title>
+    <!-- Подключаем Telegram Web Apps SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: var(--tg-theme-bg-color, #fff);
+            color: var(--tg-theme-text-color, #000);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+        input {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+        .hint {
+            color: var(--tg-theme-hint-color, #999);
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔢 Расчет судьбы</h1>
+    <p>Введите вашу дату рождения:</p>
+    
+    <input type="date" id="birthdate" />
+    <div class="hint">Мы рассчитаем Число Жизненного Пути</div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Раскрыть на весь экран
+
+        // Настройка главной кнопки
+        tg.MainButton.setText("РАССЧИТАТЬ");
+        tg.MainButton.show();
+
+        // Обработка клика по кнопке
+        tg.MainButton.onClick(function() {
+            const date = document.getElementById('birthdate').value;
+            if (!date) {
+                tg.showAlert("Пожалуйста, выберите дату!");
+                return;
+            }
+            
+            // Преобразуем формат YYYY-MM-DD в DD.MM.YYYY (как ожидает ваш бот)
+            const [year, month, day] = date.split('-');
+            const formattedDate = `${day}.${month}.${year}`;
+
+            // Создаем объект данных для отправки
+            const data = {
+                action: 'life_path', // Говорим боту, что делать
+                date: formattedDate
+            };
+
+            // Отправляем данные боту (как строку JSON)
+            tg.sendData(JSON.stringify(data));
+        });
+    </script>
+</body>
+</html>
