@@ -3,97 +3,187 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DEBUG MODE</title>
+    <title>Нумерология</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; padding-bottom: 200px; }
-        input { display: block; width: 100%; padding: 10px; margin: 10px 0; font-size: 16px; box-sizing: border-box; }
-        button { width: 100%; padding: 15px; background: blue; color: white; border: none; font-size: 18px; border-radius: 8px; }
-        
-        /* КОНСОЛЬ ОТЛАДКИ */
-        #debug-console {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            height: 150px;
-            background: black;
-            color: lime;
-            font-family: monospace;
-            font-size: 12px;
-            padding: 10px;
-            overflow-y: scroll;
-            z-index: 9999;
-            border-top: 2px solid red;
-            box-sizing: border-box;
+        :root {
+            --bg-color: var(--tg-theme-bg-color, #ffffff);
+            --text-color: var(--tg-theme-text-color, #000000);
+            --btn-color: var(--tg-theme-button-color, #3390ec);
+            --btn-text: var(--tg-theme-button-text-color, #ffffff);
+            --secondary: var(--tg-theme-secondary-bg-color, #f4f4f5);
         }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: sans-serif;
+            margin: 0;
+            padding: 20px;
+            padding-bottom: 80px;
+        }
+
+        /* Карточка предупреждения */
+        #warning-card {
+            background: #ffebeb;
+            color: #d32f2f;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: none;
+            border: 1px solid #ffcdd2;
+        }
+
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: #888; font-size: 14px; }
+        input, select {
+            width: 100%; box-sizing: border-box; padding: 12px;
+            border-radius: 10px; border: 1px solid #ddd;
+            font-size: 16px; background: var(--secondary); color: var(--text-color);
+        }
+
+        .main-btn {
+            width: 100%; padding: 15px; border-radius: 10px; border: none;
+            background: var(--btn-color); color: var(--btn-text);
+            font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 20px; border-radius: 15px;
+            text-align: center; margin-bottom: 20px; display: none;
+        }
+        .res-num { font-size: 48px; font-weight: bold; margin: 10px 0; }
+        .res-desc { font-size: 14px; opacity: 0.9; }
+
+        /* Табы */
+        .tabs {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 60px;
+            background: var(--bg-color); display: flex; border-top: 1px solid #ddd;
+        }
+        .tab {
+            flex: 1; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; color: #999; font-size: 12px; cursor: pointer;
+        }
+        .tab.active { color: var(--btn-color); }
+        .page { display: none; }
+        .page.active { display: block; }
     </style>
 </head>
 <body>
 
-    <h1>🛠 ТЕСТ ОТПРАВКИ</h1>
-    <p>Введите дату и нажмите кнопку:</p>
-    
-    <input type="date" id="test-date">
-    <button onclick="trySend()">ОТПРАВИТЬ ДАННЫЕ</button>
+    <div id="warning-card">
+        ⚠️ <b>Ошибка запуска!</b><br>
+        Вы открыли приложение по ссылке.<br>
+        Откройте его через синюю кнопку <b>«Меню»</b> в боте, иначе отправка не сработает!
+    </div>
 
-    <!-- Окно логов -->
-    <div id="debug-console">Логи появятся здесь...<br></div>
+    <!-- СТРАНИЦА 1: ПРОФИЛЬ -->
+    <div id="p-profile" class="page active">
+        <h2>👤 Ваш профиль</h2>
+        <div class="input-group">
+            <label>Дата рождения</label>
+            <input type="date" id="birthdate" onchange="calcProfile()">
+        </div>
+        <div class="input-group">
+            <label>Имя</label>
+            <input type="text" id="name" placeholder="Иван">
+        </div>
+
+        <div id="res-profile" class="result-card">
+            <div>Число Жизненного Пути</div>
+            <div class="res-num" id="val-lp">-</div>
+            <div class="res-desc" id="calc-lp"></div>
+        </div>
+
+        <button class="main-btn" onclick="sendData('full_analysis')">🔮 Полный разбор (AI)</button>
+    </div>
+
+    <!-- СТРАНИЦА 2: НОМЕРА -->
+    <div id="p-numbers" class="page">
+        <h2>🔢 Анализ номеров</h2>
+        <div class="input-group">
+            <select id="num-type">
+                <option value="phone">📱 Телефон</option>
+                <option value="car">🚗 Автомобиль</option>
+                <option value="other">🔢 Другое число</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <input type="text" id="num-val" placeholder="Введите номер...">
+        </div>
+        <button class="main-btn" onclick="sendData('any_number')">📜 Расшифровать</button>
+    </div>
+
+    <!-- ТАБЫ -->
+    <div class="tabs">
+        <div class="tab active" onclick="nav('profile', this)">👤 Профиль</div>
+        <div class="tab" onclick="nav('numbers', this)">🔢 Номера</div>
+    </div>
 
     <script>
-        // Функция логгер - пишет текст на экран
-        function log(msg) {
-            const consoleDiv = document.getElementById('debug-console');
-            const time = new Date().toLocaleTimeString();
-            consoleDiv.innerHTML += `[${time}] ${msg}<br>`;
-            consoleDiv.scrollTop = consoleDiv.scrollHeight; // Автопрокрутка
-        }
-
         const tg = window.Telegram.WebApp;
-
-        // 1. Проверка инициализации
-        log("🚀 Скрипт запущен");
-        
-        if (window.Telegram) {
-            log("✅ Telegram объект найден");
-        } else {
-            log("❌ Telegram объект НЕ найден");
-        }
-
         tg.expand();
-        log("📊 InitData: " + (tg.initData ? "ЕСТЬ (ОК)" : "ПУСТО (ОШИБКА)"));
-        
+
+        // Проверка: правильно ли открыто
         if (!tg.initData) {
-            log("⚠️ ВНИМАНИЕ: initData пустая! sendData НЕ сработает.");
-            log("Вы открыли по прямой ссылке? Нужно через кнопку Меню!");
+            document.getElementById('warning-card').style.display = 'block';
         }
 
-        function trySend() {
-            log("👉 Нажата кнопка...");
+        // === МАТЕМАТИКА ===
+        function sumDigits(str) {
+            return String(str).replace(/\D/g,'').split('').reduce((a,b)=>+a + +b, 0);
+        }
+        function reduce(n) {
+            while(n > 9 && n!=11 && n!=22 && n!=33) n = sumDigits(n);
+            return n;
+        }
+
+        // === ЛОГИКА ===
+        function calcProfile() {
+            const d = document.getElementById('birthdate').value;
+            if(!d) return;
+            const [y,m,day] = d.split('-');
+            const total = sumDigits(y) + sumDigits(m) + sumDigits(day);
+            const res = reduce(total);
             
-            const dateVal = document.getElementById('test-date').value;
-            if (!dateVal) {
-                log("❌ Дата не выбрана");
+            document.getElementById('val-lp').innerText = res;
+            document.getElementById('calc-lp').innerText = `${sumDigits(day)} + ${sumDigits(m)} + ${sumDigits(y)} = ${total}`;
+            document.getElementById('res-profile').style.display = 'block';
+        }
+
+        function nav(page, el) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('p-'+page).classList.add('active');
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        // === ОТПРАВКА ===
+        function sendData(action) {
+            // Если открыто криво - ругаемся
+            if (!tg.initData) {
+                tg.showAlert("Откройте через кнопку Меню в боте!");
                 return;
             }
 
-            const data = {
-                action: 'full_analysis',
-                date: dateVal.split('-').reverse().join('.'), // YYYY-MM-DD -> DD.MM.YYYY
-                name: "Тест Тестович"
-            };
+            let data = { action: action };
 
-            const jsonStr = JSON.stringify(data);
-            log("📦 Данные готовы: " + jsonStr);
-
-            try {
-                log("📡 Вызываю tg.sendData()...");
-                tg.sendData(jsonStr);
-                log("✅ sendData вызвана (окно должно закрыться)");
-            } catch (e) {
-                log("🔥 CRITICAL ERROR: " + e.message);
-                log("Stack: " + e.stack);
+            if (action === 'full_analysis') {
+                const date = document.getElementById('birthdate').value;
+                if (!date) return tg.showAlert("Выберите дату!");
+                // Перевод YYYY-MM-DD -> DD.MM.YYYY
+                data.date = date.split('-').reverse().join('.'); 
+                data.name = document.getElementById('name').value;
+            } 
+            else if (action === 'any_number') {
+                const val = document.getElementById('num-val').value;
+                if (!val) return tg.showAlert("Введите номер!");
+                data.number = val;
+                data.type = document.getElementById('num-type').value;
             }
+
+            tg.sendData(JSON.stringify(data));
         }
     </script>
 </body>
