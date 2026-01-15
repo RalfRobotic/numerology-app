@@ -3,187 +3,89 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Нумерология</title>
+    <title>DEBUG MODE</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        :root {
-            --bg-color: var(--tg-theme-bg-color, #ffffff);
-            --text-color: var(--tg-theme-text-color, #000000);
-            --btn-color: var(--tg-theme-button-color, #3390ec);
-            --btn-text: var(--tg-theme-button-text-color, #ffffff);
-            --secondary: var(--tg-theme-secondary-bg-color, #f4f4f5);
+        body { font-family: sans-serif; padding: 20px; background: #fff; color: #000; }
+        .btn { 
+            display: block; width: 100%; padding: 20px; margin: 20px 0; 
+            background: blue; color: white; font-size: 20px; font-weight: bold; 
+            border: none; border-radius: 10px; 
         }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            font-family: sans-serif;
-            margin: 0;
-            padding: 20px;
-            padding-bottom: 80px;
-        }
-
-        /* Карточка предупреждения */
-        #warning-card {
-            background: #ffebeb;
-            color: #d32f2f;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: none;
-            border: 1px solid #ffcdd2;
-        }
-
-        .input-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; color: #888; font-size: 14px; }
-        input, select {
-            width: 100%; box-sizing: border-box; padding: 12px;
-            border-radius: 10px; border: 1px solid #ddd;
-            font-size: 16px; background: var(--secondary); color: var(--text-color);
-        }
-
-        .main-btn {
-            width: 100%; padding: 15px; border-radius: 10px; border: none;
-            background: var(--btn-color); color: var(--btn-text);
-            font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;
-        }
-
-        .result-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white; padding: 20px; border-radius: 15px;
-            text-align: center; margin-bottom: 20px; display: none;
-        }
-        .res-num { font-size: 48px; font-weight: bold; margin: 10px 0; }
-        .res-desc { font-size: 14px; opacity: 0.9; }
-
-        /* Табы */
-        .tabs {
-            position: fixed; bottom: 0; left: 0; width: 100%; height: 60px;
-            background: var(--bg-color); display: flex; border-top: 1px solid #ddd;
-        }
-        .tab {
-            flex: 1; display: flex; flex-direction: column; align-items: center;
-            justify-content: center; color: #999; font-size: 12px; cursor: pointer;
-        }
-        .tab.active { color: var(--btn-color); }
-        .page { display: none; }
-        .page.active { display: block; }
+        input { font-size: 20px; padding: 10px; width: 100%; box-sizing: border-box; }
+        .error { color: red; font-weight: bold; border: 1px solid red; padding: 10px; display: none;}
     </style>
 </head>
 <body>
 
-    <div id="warning-card">
-        ⚠️ <b>Ошибка запуска!</b><br>
-        Вы открыли приложение по ссылке.<br>
-        Откройте его через синюю кнопку <b>«Меню»</b> в боте, иначе отправка не сработает!
-    </div>
+    <h1>🔧 РЕЖИМ ОТЛАДКИ</h1>
+    <div id="status" style="color: grey;">Инициализация...</div>
+    <div id="err-box" class="error"></div>
 
-    <!-- СТРАНИЦА 1: ПРОФИЛЬ -->
-    <div id="p-profile" class="page active">
-        <h2>👤 Ваш профиль</h2>
-        <div class="input-group">
-            <label>Дата рождения</label>
-            <input type="date" id="birthdate" onchange="calcProfile()">
-        </div>
-        <div class="input-group">
-            <label>Имя</label>
-            <input type="text" id="name" placeholder="Иван">
-        </div>
+    <p>1. Введите дату:</p>
+    <input type="date" id="date-input">
 
-        <div id="res-profile" class="result-card">
-            <div>Число Жизненного Пути</div>
-            <div class="res-num" id="val-lp">-</div>
-            <div class="res-desc" id="calc-lp"></div>
-        </div>
-
-        <button class="main-btn" onclick="sendData('full_analysis')">🔮 Полный разбор (AI)</button>
-    </div>
-
-    <!-- СТРАНИЦА 2: НОМЕРА -->
-    <div id="p-numbers" class="page">
-        <h2>🔢 Анализ номеров</h2>
-        <div class="input-group">
-            <select id="num-type">
-                <option value="phone">📱 Телефон</option>
-                <option value="car">🚗 Автомобиль</option>
-                <option value="other">🔢 Другое число</option>
-            </select>
-        </div>
-        <div class="input-group">
-            <input type="text" id="num-val" placeholder="Введите номер...">
-        </div>
-        <button class="main-btn" onclick="sendData('any_number')">📜 Расшифровать</button>
-    </div>
-
-    <!-- ТАБЫ -->
-    <div class="tabs">
-        <div class="tab active" onclick="nav('profile', this)">👤 Профиль</div>
-        <div class="tab" onclick="nav('numbers', this)">🔢 Номера</div>
-    </div>
+    <p>2. Нажмите кнопку:</p>
+    <button class="btn" onclick="startSending()">🚀 ОТПРАВИТЬ</button>
 
     <script>
+        // Перехват глобальных ошибок JS
+        window.onerror = function(msg, url, line) {
+            alert("🔥 GLOBAL ERROR: " + msg + "\nLine: " + line);
+            document.getElementById('err-box').style.display = 'block';
+            document.getElementById('err-box').innerText = "JS Error: " + msg;
+        };
+
         const tg = window.Telegram.WebApp;
-        tg.expand();
+        const statusEl = document.getElementById('status');
 
-        // Проверка: правильно ли открыто
-        if (!tg.initData) {
-            document.getElementById('warning-card').style.display = 'block';
+        try {
+            tg.expand();
+            statusEl.innerText = "TG SDK загружен. InitData length: " + tg.initData.length;
+        } catch (e) {
+            statusEl.innerText = "Ошибка SDK: " + e.message;
+            alert("Ошибка Telegram SDK: " + e.message);
         }
 
-        // === МАТЕМАТИКА ===
-        function sumDigits(str) {
-            return String(str).replace(/\D/g,'').split('').reduce((a,b)=>+a + +b, 0);
-        }
-        function reduce(n) {
-            while(n > 9 && n!=11 && n!=22 && n!=33) n = sumDigits(n);
-            return n;
-        }
+        function startSending() {
+            try {
+                alert("1. Кнопка нажата. Начинаю сбор данных...");
 
-        // === ЛОГИКА ===
-        function calcProfile() {
-            const d = document.getElementById('birthdate').value;
-            if(!d) return;
-            const [y,m,day] = d.split('-');
-            const total = sumDigits(y) + sumDigits(m) + sumDigits(day);
-            const res = reduce(total);
-            
-            document.getElementById('val-lp').innerText = res;
-            document.getElementById('calc-lp').innerText = `${sumDigits(day)} + ${sumDigits(m)} + ${sumDigits(y)} = ${total}`;
-            document.getElementById('res-profile').style.display = 'block';
-        }
+                // Проверка даты
+                const dateVal = document.getElementById('date-input').value;
+                if (!dateVal) {
+                    alert("❌ Ошибка: Дата не выбрана!");
+                    return;
+                }
+                alert("2. Дата получена: " + dateVal);
 
-        function nav(page, el) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.getElementById('p-'+page).classList.add('active');
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            el.classList.add('active');
-        }
+                // Формирование данных
+                const data = {
+                    action: 'full_analysis',
+                    date: dateVal.split('-').reverse().join('.'),
+                    name: "Debug User"
+                };
+                const jsonStr = JSON.stringify(data);
+                alert("3. JSON готов: " + jsonStr);
 
-        // === ОТПРАВКА ===
-        function sendData(action) {
-            // Если открыто криво - ругаемся
-            if (!tg.initData) {
-                tg.showAlert("Откройте через кнопку Меню в боте!");
-                return;
+                // Проверка доступности sendData
+                if (!tg.initData) {
+                    throw new Error("initData пустая! Приложение открыто не через кнопку меню/клавиатуры.");
+                }
+
+                alert("4. Вызываю tg.sendData(). Окно должно закрыться...");
+                
+                // === ГЛАВНЫЙ МОМЕНТ ===
+                tg.sendData(jsonStr);
+                
+                // Если мы увидим этот алерт, значит окно НЕ закрылось
+                alert("⚠️ ВНИМАНИЕ: tg.sendData выполнилась, но окно не закрылось. Это баг Telegram или неверный способ открытия.");
+
+            } catch (e) {
+                alert("🔥 КРИТИЧЕСКАЯ ОШИБКА ВНУТРИ ФУНКЦИИ: " + e.message);
+                document.getElementById('err-box').style.display = 'block';
+                document.getElementById('err-box').innerText = e.message;
             }
-
-            let data = { action: action };
-
-            if (action === 'full_analysis') {
-                const date = document.getElementById('birthdate').value;
-                if (!date) return tg.showAlert("Выберите дату!");
-                // Перевод YYYY-MM-DD -> DD.MM.YYYY
-                data.date = date.split('-').reverse().join('.'); 
-                data.name = document.getElementById('name').value;
-            } 
-            else if (action === 'any_number') {
-                const val = document.getElementById('num-val').value;
-                if (!val) return tg.showAlert("Введите номер!");
-                data.number = val;
-                data.type = document.getElementById('num-type').value;
-            }
-
-            tg.sendData(JSON.stringify(data));
         }
     </script>
 </body>
