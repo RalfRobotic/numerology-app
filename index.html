@@ -3,90 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DEBUG MODE</title>
+    <title>DIAGNOSTIC</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #fff; color: #000; }
-        .btn { 
-            display: block; width: 100%; padding: 20px; margin: 20px 0; 
-            background: blue; color: white; font-size: 20px; font-weight: bold; 
-            border: none; border-radius: 10px; 
-        }
-        input { font-size: 20px; padding: 10px; width: 100%; box-sizing: border-box; }
-        .error { color: red; font-weight: bold; border: 1px solid red; padding: 10px; display: none;}
+        body { background: #000; color: #0f0; font-family: monospace; padding: 10px; word-break: break-all; }
+        .box { border: 1px solid #0f0; padding: 10px; margin-bottom: 10px; }
+        h3 { margin-top: 0; color: #fff; }
+        .fail { color: red; border-color: red; }
+        .ok { color: #0f0; }
     </style>
 </head>
 <body>
+    <h2>🕵️ ДЕТЕКТОР ПРОБЛЕМЫ</h2>
+    
+    <div class="box" id="url-box">
+        <h3>1. Адрес в браузере:</h3>
+        <div id="url-val">Загрузка...</div>
+    </div>
 
-    <h1>🔧 РЕЖИМ ОТЛАДКИ</h1>
-    <div id="status" style="color: grey;">Инициализация...</div>
-    <div id="err-box" class="error"></div>
+    <div class="box" id="hash-box">
+        <h3>2. Хвост данных (Hash):</h3>
+        <div id="hash-val">...</div>
+    </div>
 
-    <p>1. Введите дату:</p>
-    <input type="date" id="date-input">
-
-    <p>2. Нажмите кнопку:</p>
-    <button class="btn" onclick="startSending()">🚀 ОТПРАВИТЬ</button>
+    <div class="box" id="init-box">
+        <h3>3. InitData (TG SDK):</h3>
+        <div id="init-val">...</div>
+    </div>
 
     <script>
-        // Перехват глобальных ошибок JS
-        window.onerror = function(msg, url, line) {
-            alert("🔥 GLOBAL ERROR: " + msg + "\nLine: " + line);
-            document.getElementById('err-box').style.display = 'block';
-            document.getElementById('err-box').innerText = "JS Error: " + msg;
-        };
-
         const tg = window.Telegram.WebApp;
-        const statusEl = document.getElementById('status');
+        tg.expand();
 
-        try {
-            tg.expand();
-            statusEl.innerText = "TG SDK загружен. InitData length: " + tg.initData.length;
-        } catch (e) {
-            statusEl.innerText = "Ошибка SDK: " + e.message;
-            alert("Ошибка Telegram SDK: " + e.message);
+        // 1. Выводим текущий URL
+        const currentUrl = window.location.href;
+        document.getElementById('url-val').innerText = currentUrl;
+
+        // 2. Выводим Хеш (там должны быть данные)
+        const hash = window.location.hash;
+        const hashEl = document.getElementById('hash-val');
+        hashEl.innerText = hash ? hash : "ПУСТО (ДАННЫЕ ПОТЕРЯНЫ)";
+        
+        if (!hash) {
+            hashEl.className = "fail";
+            hashEl.innerHTML += "<br><br>⚠️ <b>ДИАГНОЗ:</b><br>Произошел редирект! Вы указали в боте одну ссылку, но GitHub перенаправил на другую (например http->https или добавил/убрал слэш). При редиректе Telegram данные теряются.";
         }
 
-        function startSending() {
-            try {
-                alert("1. Кнопка нажата. Начинаю сбор данных...");
+        // 3. Выводим InitData
+        const initD = tg.initData;
+        const initEl = document.getElementById('init-val');
+        initEl.innerText = initD ? "Длина: " + initD.length : "ПУСТО (0)";
+        
+        if (!initD) initEl.className = "fail";
 
-                // Проверка даты
-                const dateVal = document.getElementById('date-input').value;
-                if (!dateVal) {
-                    alert("❌ Ошибка: Дата не выбрана!");
-                    return;
-                }
-                alert("2. Дата получена: " + dateVal);
-
-                // Формирование данных
-                const data = {
-                    action: 'full_analysis',
-                    date: dateVal.split('-').reverse().join('.'),
-                    name: "Debug User"
-                };
-                const jsonStr = JSON.stringify(data);
-                alert("3. JSON готов: " + jsonStr);
-
-                // Проверка доступности sendData
-                if (!tg.initData) {
-                    throw new Error("initData пустая! Приложение открыто не через кнопку меню/клавиатуры.");
-                }
-
-                alert("4. Вызываю tg.sendData(). Окно должно закрыться...");
-                
-                // === ГЛАВНЫЙ МОМЕНТ ===
-                tg.sendData(jsonStr);
-                
-                // Если мы увидим этот алерт, значит окно НЕ закрылось
-                alert("⚠️ ВНИМАНИЕ: tg.sendData выполнилась, но окно не закрылось. Это баг Telegram или неверный способ открытия.");
-
-            } catch (e) {
-                alert("🔥 КРИТИЧЕСКАЯ ОШИБКА ВНУТРИ ФУНКЦИИ: " + e.message);
-                document.getElementById('err-box').style.display = 'block';
-                document.getElementById('err-box').innerText = e.message;
-            }
-        }
     </script>
 </body>
 </html>
