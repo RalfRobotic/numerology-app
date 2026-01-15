@@ -3,59 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>DIAGNOSTIC</title>
+    <title>Нумерология</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { background: #000; color: #0f0; font-family: monospace; padding: 10px; word-break: break-all; }
-        .box { border: 1px solid #0f0; padding: 10px; margin-bottom: 10px; }
-        h3 { margin-top: 0; color: #fff; }
-        .fail { color: red; border-color: red; }
-        .ok { color: #0f0; }
+        :root {
+            --bg-color: var(--tg-theme-bg-color, #ffffff);
+            --text-color: var(--tg-theme-text-color, #000000);
+            --btn-color: var(--tg-theme-button-color, #3390ec);
+            --btn-text: var(--tg-theme-button-text-color, #ffffff);
+            --secondary: var(--tg-theme-secondary-bg-color, #f4f4f5);
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: sans-serif;
+            margin: 0;
+            padding: 20px;
+            padding-bottom: 80px;
+        }
+
+        .input-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: #888; font-size: 14px; }
+        input, select {
+            width: 100%; box-sizing: border-box; padding: 12px;
+            border-radius: 10px; border: 1px solid #ddd;
+            font-size: 16px; background: var(--secondary); color: var(--text-color);
+        }
+
+        .main-btn {
+            width: 100%; padding: 15px; border-radius: 10px; border: none;
+            background: var(--btn-color); color: var(--btn-text);
+            font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 10px;
+        }
+
+        .result-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; padding: 20px; border-radius: 15px;
+            text-align: center; margin-bottom: 20px; display: none;
+        }
+        .res-num { font-size: 48px; font-weight: bold; margin: 10px 0; }
+        .res-desc { font-size: 14px; opacity: 0.9; }
+
+        .tabs {
+            position: fixed; bottom: 0; left: 0; width: 100%; height: 60px;
+            background: var(--bg-color); display: flex; border-top: 1px solid #ddd;
+        }
+        .tab {
+            flex: 1; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; color: #999; font-size: 12px; cursor: pointer;
+        }
+        .tab.active { color: var(--btn-color); }
+        .page { display: none; }
+        .page.active { display: block; }
     </style>
 </head>
 <body>
-    <h2>🕵️ ДЕТЕКТОР ПРОБЛЕМЫ</h2>
-    
-    <div class="box" id="url-box">
-        <h3>1. Адрес в браузере:</h3>
-        <div id="url-val">Загрузка...</div>
+
+    <!-- ПРОФИЛЬ -->
+    <div id="p-profile" class="page active">
+        <h2>👤 Ваш профиль</h2>
+        <div class="input-group">
+            <label>Дата рождения</label>
+            <input type="date" id="birthdate" onchange="calcProfile()">
+        </div>
+        <div class="input-group">
+            <label>Имя</label>
+            <input type="text" id="name" placeholder="Иван">
+        </div>
+        <div id="res-profile" class="result-card">
+            <div>Число Жизненного Пути</div>
+            <div class="res-num" id="val-lp">-</div>
+            <div class="res-desc" id="calc-lp"></div>
+        </div>
+        <button class="main-btn" onclick="sendData('full_analysis')">🔮 Полный разбор (AI)</button>
     </div>
 
-    <div class="box" id="hash-box">
-        <h3>2. Хвост данных (Hash):</h3>
-        <div id="hash-val">...</div>
+    <!-- НОМЕРА -->
+    <div id="p-numbers" class="page">
+        <h2>🔢 Анализ номеров</h2>
+        <div class="input-group">
+            <select id="num-type">
+                <option value="phone">📱 Телефон</option>
+                <option value="car">🚗 Автомобиль</option>
+                <option value="other">🔢 Другое число</option>
+            </select>
+        </div>
+        <div class="input-group">
+            <input type="text" id="num-val" placeholder="Введите номер...">
+        </div>
+        <button class="main-btn" onclick="sendData('any_number')">📜 Расшифровать</button>
     </div>
 
-    <div class="box" id="init-box">
-        <h3>3. InitData (TG SDK):</h3>
-        <div id="init-val">...</div>
+    <div class="tabs">
+        <div class="tab active" onclick="nav('profile', this)">👤 Профиль</div>
+        <div class="tab" onclick="nav('numbers', this)">🔢 Номера</div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-
-        // 1. Выводим текущий URL
-        const currentUrl = window.location.href;
-        document.getElementById('url-val').innerText = currentUrl;
-
-        // 2. Выводим Хеш (там должны быть данные)
-        const hash = window.location.hash;
-        const hashEl = document.getElementById('hash-val');
-        hashEl.innerText = hash ? hash : "ПУСТО (ДАННЫЕ ПОТЕРЯНЫ)";
         
-        if (!hash) {
-            hashEl.className = "fail";
-            hashEl.innerHTML += "<br><br>⚠️ <b>ДИАГНОЗ:</b><br>Произошел редирект! Вы указали в боте одну ссылку, но GitHub перенаправил на другую (например http->https или добавил/убрал слэш). При редиректе Telegram данные теряются.";
+        // УБРАЛИ ПРОВЕРКУ INITDATA, ЧТОБЫ РАБОТАЛО НА MAC
+
+        function sumDigits(str) { return String(str).replace(/\D/g,'').split('').reduce((a,b)=>+a + +b, 0); }
+        function reduce(n) { while(n > 9 && n!=11 && n!=22 && n!=33) n = sumDigits(n); return n; }
+
+        function calcProfile() {
+            const d = document.getElementById('birthdate').value;
+            if(!d) return;
+            const [y,m,day] = d.split('-');
+            const total = sumDigits(y) + sumDigits(m) + sumDigits(day);
+            const res = reduce(total);
+            document.getElementById('val-lp').innerText = res;
+            document.getElementById('calc-lp').innerText = `${sumDigits(day)} + ${sumDigits(m)} + ${sumDigits(y)} = ${total}`;
+            document.getElementById('res-profile').style.display = 'block';
         }
 
-        // 3. Выводим InitData
-        const initD = tg.initData;
-        const initEl = document.getElementById('init-val');
-        initEl.innerText = initD ? "Длина: " + initD.length : "ПУСТО (0)";
-        
-        if (!initD) initEl.className = "fail";
+        function nav(page, el) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById('p-'+page).classList.add('active');
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            el.classList.add('active');
+        }
 
+        function sendData(action) {
+            // МЫ УБРАЛИ ЗДЕСЬ ПРОВЕРКУ INITDATA
+            // Теперь кнопка нажмется в любом случае
+            
+            let data = { action: action };
+            if (action === 'full_analysis') {
+                const date = document.getElementById('birthdate').value;
+                if (!date) return tg.showAlert("Выберите дату!");
+                data.date = date.split('-').reverse().join('.'); 
+                data.name = document.getElementById('name').value;
+            } else if (action === 'any_number') {
+                const val = document.getElementById('num-val').value;
+                if (!val) return tg.showAlert("Введите номер!");
+                data.number = val;
+                data.type = document.getElementById('num-type').value;
+            }
+            
+            // Пытаемся отправить
+            tg.sendData(JSON.stringify(data));
+        }
     </script>
 </body>
 </html>
